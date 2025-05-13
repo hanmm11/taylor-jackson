@@ -1,10 +1,9 @@
-
 import os
 import logging
 import asyncio
 from aiohttp import web
 from telegram import Update
-from telegram.ext import Application, MessageHandler, CommandHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import aiohttp
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -22,12 +21,11 @@ async def fetch_api(url):
         async with session.get(url) as resp:
             if resp.status == 200:
                 return await resp.json()
-            return ["接口请求失败"]
+            return ["API 调用失败"]
 
-# 命令函数
 async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    cid = update.effective_chat.id
-    url = f"{API_BASE}/history/{cid}?admin_id={update.effective_user.id}"
+    chat_id = update.effective_chat.id
+    url = f"{API_BASE}/history/{chat_id}?admin_id={update.effective_user.id}"
     result = await fetch_api(url)
     await update.message.reply_text("\n".join(result))
 
@@ -39,14 +37,14 @@ async def history_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("\n".join(result))
 
 async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    cid = update.effective_chat.id
-    url = f"{API_BASE}/listusers/{cid}?admin_id={update.effective_user.id}"
+    chat_id = update.effective_chat.id
+    url = f"{API_BASE}/listusers/{chat_id}?admin_id={update.effective_user.id}"
     result = await fetch_api(url)
     await update.message.reply_text("用户列表：\n" + "\n".join(result))
 
 async def bot_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    cid = update.effective_chat.id
-    url = f"{API_BASE}/botmessages/{cid}?admin_id={update.effective_user.id}"
+    chat_id = update.effective_chat.id
+    url = f"{API_BASE}/botmessages/{chat_id}?admin_id={update.effective_user.id}"
     result = await fetch_api(url)
     await update.message.reply_text("Bot 消息：\n" + "\n".join(result))
 
@@ -57,7 +55,6 @@ async def bot_messages_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         result = await fetch_api(url)
         await update.message.reply_text("Bot 发给该用户的消息：\n" + "\n".join(result))
 
-# 权限装饰器
 def admin_only(func):
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         uid = update.effective_user.id
@@ -67,7 +64,7 @@ def admin_only(func):
     return wrapper
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.info(f"Message: {update.message.text}")
+    logger.info(f"Received message: {update.message.text}")
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Error: {context.error}")
